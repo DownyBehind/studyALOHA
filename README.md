@@ -71,21 +71,31 @@ git add .gitmodules aloha_sim lerobot
 git commit -m "Add aloha_sim and lerobot as submodules"
 ```
 
-이후 `git status`를 하면 `aloha_sim`과 `lerobot`은 “서브모듈이 가리키는 커밋”만 추적되고, 그 안의 파일들은 각각의 저장소에서 관리된다.
+이 저장소는 **삭제 없이** 기존 `aloha_sim`, `lerobot`을 서브모듈로 등록해 두었다. 학습 중인 로컬 파일은 그대로 두고, 위 "버전 올리기"처럼 원본만 `pull`해서 반영하면 된다.
 
-### 서브모듈이 가리키는 버전 올리기
+### 서브모듈이 가리키는 버전 올리기 (원본에서 업데이트 받기)
 
-외부 프로젝트가 업데이트됐을 때, 그 버전을 쓰고 싶다면:
+학습 중에도 **원본(aloha_sim, lerobot)의 최신 변경만 받아서 반영**하고 싶다면, 각 폴더에서 `pull`한 뒤 상위 저장소에 "이제 이 커밋을 쓴다"만 커밋하면 된다. **폴더를 지울 필요 없고, 로컬에서 만든 파일(학습 결과 등)은 그대로 둔 채** 원본만 갱신할 수 있다.
 
 ```bash
-cd aloha_sim   # 또는 lerobot
+# aloha_sim 최신 반영
+cd aloha_sim
 git fetch origin
-git checkout main   # 또는 원하는 브랜치
-git pull
+git pull origin main   # 기본 브랜치가 main이 아닐 수 있음 (예: master)
 cd ..
-git add aloha_sim   # 또는 lerobot
-git commit -m "Update aloha_sim to latest main"
+git add aloha_sim
+git commit -m "Update aloha_sim to latest"
+
+# lerobot도 같은 방식
+cd lerobot
+git fetch origin
+git pull origin main
+cd ..
+git add lerobot
+git commit -m "Update lerobot to latest"
 ```
+
+각 서브모듈에서 `git status`로 로컬 수정/추가 파일을 확인할 수 있다. 학습 체크포인트 등은 그대로 두고, 원본 코드만 올리고 싶다면 위처럼 `pull` 후 studyALOHA 쪽에서 `git add`·`commit`만 하면 된다.
 
 ---
 
@@ -1089,3 +1099,105 @@ lerobot-train \
 그리고 현재 상태를 가장 정확하게 정리하면 다음과 같다.
 
 **정책은 아직 최종 success 판정을 만들지 못했지만, reward 관점에서는 ALOHA insertion task의 상당 부분을 이미 학습했으며, 고득점 episode가 반복적으로 나타나는 것으로 보아 추가 학습을 계속할 가치가 충분한 상태다.**
+
+---
+
+# 부록 A. Git으로 프로젝트·서브모듈 관리
+
+이 프로젝트는 **studyALOHA**(상위 저장소) 하나로 전체를 관리하고, `aloha_sim`·`lerobot`은 **서브모듈**로 원본 저장소를 가리킨다. 아래는 일상적인 Git 사용 방법 정리다.
+
+## A.1 저장소 구도
+
+| 대상 | 역할 | 원격 URL 예시 |
+|------|------|----------------|
+| **studyALOHA** (상위) | 내 실험 문서·설정·서브모듈 “버전” 관리 | `https://github.com/DownyBehind/studyALOHA.git` |
+| **aloha_sim** (서브모듈) | 원본 코드만 참조, 업데이트는 원본에서 pull | `https://github.com/google-deepmind/aloha_sim.git` |
+| **lerobot** (서브모듈) | 위와 동일 | `https://github.com/huggingface/lerobot.git` |
+
+상위 저장소에는 **README, .gitignore, .gitmodules**와 **서브모듈이 가리키는 커밋**만 커밋·푸시한다. 서브모듈 폴더 안의 실제 코드는 각 원본 저장소에서 관리된다.
+
+## A.2 프로젝트(studyALOHA) 업데이트
+
+문서 수정, .gitignore 변경, 서브모듈이 가리키는 커밋을 바꾼 뒤 **상위 저장소만** 올리는 흐름이다.
+
+```bash
+# 1) studyALOHA 루트에서
+cd /path/to/studyALOHA
+
+# 2) 변경 사항 확인 (서브모듈은 "어떤 커밋을 쓰는지"만 보임)
+git status
+
+# 3) 올릴 파일 스테이징 (서브모듈 버전을 올렸다면 aloha_sim, lerobot 도 추가)
+git add README.md .gitignore   # 필요 시 aloha_sim lerobot
+
+# 4) 커밋 후 원격에 반영
+git commit -m "문서 정리 및 서브모듈 버전 반영"
+git push origin master
+```
+
+다른 PC에서 이 저장소를 **처음** 받을 때:
+
+```bash
+git clone --recurse-submodules https://github.com/DownyBehind/studyALOHA.git studyALOHA
+cd studyALOHA
+```
+
+이미 클론만 해 둔 경우(서브모듈이 비어 있을 때):
+
+```bash
+git pull origin master
+git submodule update --init --recursive
+```
+
+## A.3 서브모듈(aloha_sim, lerobot) 업데이트
+
+원본(google-deepmind/aloha_sim, huggingface/lerobot)이 업데이트됐을 때, **그 변경만 받아서** studyALOHA에 “이제 이 커밋 쓴다”고 기록하는 방법이다. 로컬에서 만든 학습 결과·체크포인트는 건드리지 않는다.
+
+### aloha_sim 최신 반영
+
+```bash
+cd /path/to/studyALOHA/aloha_sim
+git fetch origin
+git pull origin main   # 또는 master 등, 원본의 기본 브랜치에 맞춤
+cd ..
+git add aloha_sim
+git commit -m "Update aloha_sim to latest"
+git push origin master   # 상위 저장소에 반영
+```
+
+### lerobot 최신 반영
+
+```bash
+cd /path/to/studyALOHA/lerobot
+git fetch origin
+git pull origin main
+cd ..
+git add lerobot
+git commit -m "Update lerobot to latest"
+git push origin master
+```
+
+### 두 서브모듈 한 번에 최신으로 맞추기
+
+```bash
+cd /path/to/studyALOHA
+git submodule update --remote aloha_sim
+git submodule update --remote lerobot
+git add aloha_sim lerobot
+git commit -m "Update aloha_sim and lerobot to latest"
+git push origin master
+```
+
+`--remote`는 각 서브모듈의 원격 추적 브랜치 기준 최신 커밋으로 맞춘다. 브랜치가 `main`이 아니면 `.gitmodules` 또는 해당 서브모듈의 `branch` 설정을 확인한다.
+
+## A.4 일상적인 Git 관리 요약
+
+| 하고 싶은 일 | 어디서 실행 | 대략적인 순서 |
+|-------------|-------------|----------------|
+| README·설정만 수정해서 GitHub에 반영 | studyALOHA 루트 | `git add` → `commit` → `push` |
+| 원본 aloha_sim 코드만 최신으로 맞추기 | `aloha_sim`에서 pull 후 studyALOHA 루트에서 | `cd aloha_sim` → `git pull origin main` → `cd ..` → `git add aloha_sim` → `commit` → `push` |
+| 원본 lerobot 코드만 최신으로 맞추기 | `lerobot`에서 pull 후 studyALOHA 루트에서 | 위와 동일하게 `lerobot` 기준으로 |
+| 다른 PC에서 프로젝트 받기 | 새 PC | `git clone --recurse-submodules <URL>` 또는 클론 후 `git submodule update --init --recursive` |
+| 서브모듈 안 로컬 변경(학습 결과 등) 확인 | `aloha_sim` 또는 `lerobot` 안에서 | `git status` (상위 저장소에는 서브모듈 “커밋”만 올리면 됨) |
+
+서브모듈 폴더 안에서 수정한 파일은 **원본 저장소에 커밋하지 않는 한** 상위 저장소 `git status`에 “modified content”로만 보인다. 학습 체크포인트·결과는 그대로 두고, 원본 코드만 따라가고 싶다면 A.3처럼 pull 후 상위에서 `git add`·`commit`·`push`만 하면 된다.
