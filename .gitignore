@@ -1,0 +1,6 @@
+# Outputs
+outputs/
+lerobot/outputs/
+
+# Virtual environments
+aloha-venv/

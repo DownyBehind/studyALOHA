@@ -1,0 +1,6 @@
+[submodule "aloha_sim"]
+	path = aloha_sim
+	url = https://github.com/google-deepmind/aloha_sim.git
+[submodule "lerobot"]
+	path = lerobot
+	url = https://github.com/huggingface/lerobot.git
