@@ -1140,11 +1140,17 @@ lerobot-eval \
 
 ### 평가 에피소드 영상
 
-<video src="photo/eval_episode_1.mp4" controls autoplay muted loop playsinline></video>
+**eval_episode_1**
 
-<video src="photo/eval_episode_4.mp4" controls autoplay muted loop playsinline></video>
+![eval_episode_1](photo/eval_episode_1.gif)
 
-<video src="photo/eval_episode_6.mp4" controls autoplay muted loop playsinline></video>
+**eval_episode_4**
+
+![eval_episode_4](photo/eval_episode_4.gif)
+
+**eval_episode_6**
+
+![eval_episode_6](photo/eval_episode_6.gif)
 
 ---
 
