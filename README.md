@@ -503,6 +503,8 @@ cd ~/study/workspace/physicalAI/studyALOHA/aloha_sim
 python aloha_sim/viewer.py --policy=no_policy --task_name=HandOverBanana
 ```
 
+![MuJoCo ALOHA 시뮬레이션 뷰어 (google_64k scene)](photo/Screenshot%20from%202026-03-14%2000-53-42.png)
+
 설명:
 - `no_policy`는 학습된 정책 없이 viewer와 task만 확인하는 모드입니다.
 - 이 단계는 시뮬레이터 기동 여부를 확인하는 최소 검증입니다.
