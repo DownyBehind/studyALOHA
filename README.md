@@ -1138,6 +1138,14 @@ lerobot-eval \
 - **참고**: 3k → 30k → 60k로 갈수록 avg_sum_reward가 3.9 → 23.9 → 160.3처럼 크게 오릅니다. 이는 “정책이 점점 더 보상을 많이 받는 행동을 하기 시작했다”는 뜻입니다. pc_success가 0이어도, high reward episode가 있다는 것은 “가끔은 성공 직전까지 갔다”는 의미로 해석할 수 있습니다.
 - **요약**: “60k에서 reward 160, max 1.4까지 나왔고, 완전 성공(success>0)은 아직이지만, 100k나 더 학습하면 success가 나올 가능성이 있다”는 식으로, “다음 단계로 무엇을 할지”를 제시할 수 있습니다.
 
+### 평가 에피소드 영상
+
+<video src="photo/eval_episode_1.mp4" controls autoplay muted loop playsinline></video>
+
+<video src="photo/eval_episode_4.mp4" controls autoplay muted loop playsinline></video>
+
+<video src="photo/eval_episode_6.mp4" controls autoplay muted loop playsinline></video>
+
 ---
 
 # 23. 전체 프로세스에서의 위치
