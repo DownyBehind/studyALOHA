@@ -1,4 +1,5 @@
-# ALOHA + LeRobot Ubuntu 실험 정리 가이드  
+# ALOHA + LeRobot Ubuntu 실험 정리 가이드
+
 **Ubuntu 기반 ALOHA simulation + LeRobot imitation learning 전체 실험 절차, 재현 방법, 개념 정리**
 
 본 문서는 Ubuntu 환경에서 **MuJoCo 기반 ALOHA simulation**과 **LeRobot 기반 imitation learning(ACT policy)** 실험을 재현할 수 있도록 정리한 가이드입니다.  
@@ -21,11 +22,11 @@
 
 ## 독자별 추천 흐름
 
-| 대상 | 추천 흐름 | 비고 |
-|------|-----------|------|
-| **해당 분야가 처음인 경우** | 용어 정리 → 1장 전체 그림 → 2장 ALOHA/LeRobot 역할 → 3장 시뮬레이션·모방 학습 선택 이유 → 이후 필요한 절만 참고 | policy, env, checkpoint 등 용어를 먼저 읽으면 흐름을 따라가기 수월합니다. |
-| **로봇/강화학습은 익숙하나 본 스택은 처음인 경우** | 1장 → 2장 → 5장 흐름 → 6~8장(환경 점검) → 12~14장(데이터·ACT·학습) | ALOHA·LeRobot·ACT 조합 위주로 참고하면 됩니다. |
-| **실험 재현이 목적인 경우** | 4장 환경 → 5장 흐름 → 7~11장(재실행·확인) → 14~20장(학습·체크포인트·평가) | 경로와 명령어를 자신의 환경에 맞게 변경하여 적용하면 됩니다. |
+| 대상                                               | 추천 흐름                                                                                                       | 비고                                                                      |
+| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **해당 분야가 처음인 경우**                        | 용어 정리 → 1장 전체 그림 → 2장 ALOHA/LeRobot 역할 → 3장 시뮬레이션·모방 학습 선택 이유 → 이후 필요한 절만 참고 | policy, env, checkpoint 등 용어를 먼저 읽으면 흐름을 따라가기 수월합니다. |
+| **로봇/강화학습은 익숙하나 본 스택은 처음인 경우** | 1장 → 2장 → 5장 흐름 → 6~8장(환경 점검) → 12~14장(데이터·ACT·학습)                                              | ALOHA·LeRobot·ACT 조합 위주로 참고하면 됩니다.                            |
+| **실험 재현이 목적인 경우**                        | 4장 환경 → 5장 흐름 → 7~11장(재실행·확인) → 14~20장(학습·체크포인트·평가)                                       | 경로와 명령어를 자신의 환경에 맞게 변경하여 적용하면 됩니다.              |
 
 ## 핵심 용어 정리
 
@@ -35,13 +36,13 @@
   실제 로봇을 움직이지 않고, 컴퓨터 안에서 로봇과 환경을 수학적으로 모델링해 동작을 재현하는 것입니다. 게임 엔진처럼 “가상 세계”에서 로봇이 움직이고, 물리 법칙(중력, 충돌 등)이 적용됩니다.
 
 - **환경(Environment, Env)**  
-  로봇이 “살아있는” 세계라고 보면 됩니다. 환경이 **현재 상태(이미지, 관절 각도 등)**를 주고, 로봇(또는 정책)이 **행동(action)**을 내면, 환경이 **다음 상태**와 **보상(reward)** 등을 돌려줍니다. Gym/Gymnasium의 `env`가 바로 이 역할을 합니다.
+  로봇이 “살아있는” 세계라고 보면 됩니다. 환경이 **현재 상태(이미지, 관절 각도 등)** 를 주고, 로봇(또는 정책)이 **행동(action)** 을 내면, 환경이 **다음 상태**와 **보상(reward)** 등을 돌려줍니다. Gym/Gymnasium의 `env`가 바로 이 역할을 합니다.
 
 - **정책(Policy)**  
   “지금 보이는 상황에서 어떤 행동을 할지”를 결정하는 함수 또는 신경망입니다. 카메라 이미지와 로봇 상태를 입력받아, 그리퍼를 얼마나 벌릴지, 팔을 어느 각도로 움직일지 같은 **action**을 출력합니다. **학습한다**는 것은 이 정책의 파라미터를 데이터나 보상을 이용해 조정하는 것입니다.
 
 - **Imitation Learning(모방 학습)**  
-  사람(또는 전문가)이 미리 수행한 **데모(demonstration)**를 보고, “그 행동을 그대로 흉내 내도록” 정책을 학습하는 방식입니다. 보상을 직접 탐색하는 Reinforcement Learning(강화 학습)과 구별됩니다.
+  사람(또는 전문가)이 미리 수행한 **데모(demonstration)** 를 보고, “그 행동을 그대로 흉내 내도록” 정책을 학습하는 방식입니다. 보상을 직접 탐색하는 Reinforcement Learning(강화 학습)과 구별됩니다.
 
 - **Demonstration / Dataset**  
   사람이 조작한 로봇의 “영상 + 상태 + 행동” 기록입니다. 각 시점마다 “이때 카메라에는 이렇게 보였고, 로봇은 이렇게 움직였다”가 저장되어 있고, 정책은 이걸 보고 같은 행동을 하도록 학습합니다.
@@ -53,7 +54,7 @@
   학습된 정책을 시뮬레이션 환경에 넣고, 실제로 몇 번 에피소드를 돌려서 **성공률, 보상** 등을 측정하는 것입니다. “얼마나 잘 하는가”를 숫자와 영상으로 확인하는 단계입니다.
 
 - **GPU / CUDA**  
-  딥러닝 학습은 연산량이 많아서 **GPU(그래픽 카드)**를 사용합니다. CUDA는 NVIDIA GPU에서 연산을 수행하기 위한 플랫폼입니다. `nvidia-smi`로 GPU가 인식되는지, PyTorch가 CUDA를 쓰는지 확인합니다.
+  딥러닝 학습은 연산량이 많아서 **GPU(그래픽 카드)** 를 사용합니다. CUDA는 NVIDIA GPU에서 연산을 수행하기 위한 플랫폼입니다. `nvidia-smi`로 GPU가 인식되는지, PyTorch가 CUDA를 쓰는지 확인합니다.
 
 - **가상환경(Virtual Environment)**  
   프로젝트마다 필요한 Python 버전과 패키지가 다를 수 있어, **프로젝트별로 격리된 Python 환경**을 만드는 것입니다. `venv`, `conda` 등으로 만들며, “이 폴더에서는 Python 3.10 + MuJoCo, 저 폴더에서는 Python 3.12 + LeRobot”처럼 분리해 씁니다.
@@ -81,10 +82,10 @@
 
 본 프로젝트는 **studyALOHA** 단일 Git 저장소로 관리하며, 아래 두 디렉터리는 **외부 저장소를 클론한 서브모듈**입니다.
 
-| 디렉터리   | 원본 저장소 |
-|-----------|-------------|
+| 디렉터리     | 원본 저장소                                                               |
+| ------------ | ------------------------------------------------------------------------- |
 | `aloha_sim/` | [google-deepmind/aloha_sim](https://github.com/google-deepmind/aloha_sim) |
-| `lerobot/`   | [huggingface/lerobot](https://github.com/huggingface/lerobot) |
+| `lerobot/`   | [huggingface/lerobot](https://github.com/huggingface/lerobot)             |
 
 이 구조는 **Git 서브모듈**로 관리하는 것이 권장됩니다. 상위 저장소(studyALOHA)는 "현재 실험에서 사용하는 aloha_sim·lerobot의 커밋"만 기록하며, 실제 코드는 각 원본 저장소에서 유지됩니다.
 
@@ -288,7 +289,7 @@ ALOHA insertion과 같이 정밀 조작이 필요한 task에서는 imitation lea
 
 ### 보충: 시뮬레이션 + 모방 학습을 선택한 이유
 
-- **참고**: 실제 로봇을 사서 돌리면 비싸고, 한 번 실패할 때마다 리셋하고 다시 놓는 것도 번거롭습니다. 그래서 먼저 **컴퓨터 안의 가상 로봇(시뮬레이션)**으로 실험합니다. 그리고 “보상을 찾아서 시행착오”하는 강화 학습보다, **사람이 해 둔 데모를 그대로 흉내 내게 하는(imitation learning)** 방식이 조작 태스크에서는 보통 더 빠르고 안정적으로 잘 됩니다.
+- **참고**: 실제 로봇을 사서 돌리면 비싸고, 한 번 실패할 때마다 리셋하고 다시 놓는 것도 번거롭습니다. 그래서 먼저 **컴퓨터 안의 가상 로봇(시뮬레이션)** 으로 실험합니다. 그리고 “보상을 찾아서 시행착오”하는 강화 학습보다, **사람이 해 둔 데모를 그대로 흉내 내게 하는(imitation learning)** 방식이 조작 태스크에서는 보통 더 빠르고 안정적으로 잘 됩니다.
 - **RL vs IL 차이**: RL은 시도와 보상을 통해 좋은 행동을 찾아가는 방식이고, IL은 이미 주어진 데모 행동을 배우는 방식입니다. insertion처럼 정밀한 동작은 데모 기반 모방 학습이 시작점으로 적합합니다.
 - **요약**: “이 실험은 실제 로봇 없이, 시뮬만으로, 그리고 강화 학습이 아니라 모방 학습으로 진행한다”라고 명시해 두면, 왜 dataset이 중요한지, 왜 success가 0이어도 reward가 오르는 구간을 보는지 설명하기 쉬워집니다.
 
@@ -320,13 +321,17 @@ ALOHA insertion과 같이 정밀 조작이 필요한 task에서는 imitation lea
 본 실험에서는 두 개의 가상환경을 사용하였습니다.
 
 ### A. `aloha-venv`
+
 용도:
+
 - MuJoCo
 - Aloha Sim viewer
 - 시뮬레이터 검증
 
 ### B. `lerobot-py312`
+
 용도:
+
 - LeRobot 학습
 - ALOHA env + dataset + ACT training + eval
 
@@ -349,22 +354,26 @@ ALOHA insertion과 같이 정밀 조작이 필요한 task에서는 imitation lea
 실험은 크게 4단계로 구분됩니다.
 
 ## 단계 1. 시스템/GPU 세팅
+
 - Secure Boot 비활성화
 - NVIDIA 드라이버 정상화
 - `nvidia-smi` 확인
 
 ## 단계 2. 시뮬레이터 세팅
+
 - Python venv 생성
 - MuJoCo 설치
 - Aloha Sim clone 및 viewer 확인
 
 ## 단계 3. 학습 프레임워크 세팅
+
 - Conda 설치
 - Python 3.12 env 생성
 - LeRobot 설치
 - ALOHA env 등록 확인
 
 ## 단계 4. 정책 학습 및 평가
+
 - ACT policy 학습
 - checkpoint 저장
 - 3k / 30k / 60k eval
@@ -455,6 +464,7 @@ lsmod | grep nvidia
 ```
 
 ## 7.3 CUDA 가능한 PyTorch 확인
+
 (LeRobot 환경에서)
 
 ```bash
@@ -488,6 +498,7 @@ export MUJOCO_GL=egl
 ```
 
 설명:
+
 - `egl`은 headless 또는 GPU 가속 렌더링에 유리합니다.
 - 환경에 따라 `glfw` 또는 자동 선택이 적합할 수 있으며, Ubuntu에서는 `egl`을 먼저 시도하는 것이 일반적으로 안전합니다.
 
@@ -506,6 +517,7 @@ python aloha_sim/viewer.py --policy=no_policy --task_name=HandOverBanana
 ![MuJoCo ALOHA 시뮬레이션 뷰어 (google_64k scene)](photo/Screenshot%20from%202026-03-14%2000-53-42.png)
 
 설명:
+
 - `no_policy`는 학습된 정책 없이 viewer와 task만 확인하는 모드입니다.
 - 이 단계는 시뮬레이터 기동 여부를 확인하는 최소 검증입니다.
 
@@ -677,6 +689,7 @@ ALOHA insertion과 같은 task에서는:
 - 일정 구간 동안의 연속적인 행동 구조가 중요합니다.
 
 예를 들어:
+
 - peg 접근
 - 자세 정렬
 - 삽입 시도
@@ -742,6 +755,7 @@ lerobot-train \
 ```
 
 설명:
+
 - `steps=3000`: smoke test 이후 첫 의미 있는 짧은 학습
 - `batch_size=2`: RTX 3070 8GB에서 초기엔 가능했던 값
 - `save_freq=500`: 500 step마다 checkpoint 저장
@@ -777,18 +791,22 @@ checkpoints/
 ```
 
 ## 15.1 `pretrained_model`
+
 policy 본체가 저장됩니다.
 
 주요 파일:
+
 - `model.safetensors`
 - `train_config.json`
 
 이 경로를 **eval용 policy path**로 사용합니다.
 
 ## 15.2 `training_state`
+
 resume에 필요한 정보가 저장됩니다.
 
 예:
+
 - optimizer state
 - random state
 - current step
@@ -802,7 +820,7 @@ resume에 필요한 정보가 저장됩니다.
 
 ### 보충: checkpoint를 어떻게 쓰는지
 
-- **참고**: 학습은 시간이 오래 걸리므로 **중간중간 저장**합니다. 그 저장본이 checkpoint입니다. `000500`, `001000` 같은 숫자는 “몇 step에서 저장했는지”를 나타냅니다. **평가(eval)**할 때는 `pretrained_model` 폴더 경로를 주면, 그 시점의 정책으로 에피소드를 돌립니다. **학습을 이어갈 때**는 같은 run의 `training_state`까지 포함된 checkpoint에서 resume합니다.
+- **참고**: 학습은 시간이 오래 걸리므로 **중간중간 저장**합니다. 그 저장본이 checkpoint입니다. `000500`, `001000` 같은 숫자는 “몇 step에서 저장했는지”를 나타냅니다. **평가(eval)** 할 때는 `pretrained_model` 폴더 경로를 주면, 그 시점의 정책으로 에피소드를 돌립니다. **학습을 이어갈 때**는 같은 run의 `training_state`까지 포함된 checkpoint에서 resume합니다.
 - **요약**: “3k/30k/60k eval”이라고 하면, 각각 3000, 30000, 60000 step에서 저장한 checkpoint로 평가한 결과라는 뜻입니다. “step이 늘어날수록 보통 성능이 어느 정도까지는 좋아진다”는 흐름을 보여 줄 때 유용합니다.
 
 ---
@@ -810,22 +828,28 @@ resume에 필요한 정보가 저장됩니다.
 # 16. 배치(batch size)의 의미
 
 ## 16.1 정의
+
 batch size는 **한 번의 update에 사용하는 샘플 수**를 의미합니다.
 
 예:
+
 - `batch_size=2` → step마다 2개 sample을 동시에 사용
 - `batch_size=1` → step마다 1개 sample만 사용
 
 ## 16.2 batch size를 늘리면
+
 장점:
+
 - gradient가 덜 noisy해질 수 있음
 - throughput이 올라갈 수 있음
 
 단점:
+
 - GPU 메모리를 많이 사용
 - image 기반 policy에서는 특히 메모리 부담이 큼
 
 ## 16.3 본 실험에서의 의미
+
 RTX 3070 Laptop 8GB 환경에서는:
 
 - 짧은 학습: `batch_size=2` 가능
@@ -844,28 +868,34 @@ RTX 3070 Laptop 8GB 환경에서는:
 # 17. step 수는 무엇을 의미하는가
 
 ## 17.1 step의 의미
+
 여기서 `steps`는 **optimizer update 횟수**로 이해하면 됩니다.
 
 즉:
+
 - 1 step = 1회 parameter update
 - 3000 step = 3000회 학습 업데이트
 
 ## 17.2 dataset frame 수보다 더 많이 학습할 수 있는 이유
+
 로그상 dataset frame 수는 25000인데, 학습은 60000 step까지 진행할 수 있습니다.
 
 이는 정상입니다.
 
 이유:
+
 - dataset을 한 번만 사용하는 것이 아니라
 - 여러 epoch에 걸쳐 반복하여 사용하기 때문입니다.
 
 즉:
+
 - `dataset.num_frames`는 데이터 크기
 - `steps`는 학습을 얼마나 진행할지
 
 를 나타냅니다.
 
 ## 17.3 본 실험에서의 의미
+
 - 3k: 초기 정책이 구조를 배우기 시작
 - 30k: task를 어느 정도 이해
 - 60k: 상당히 깊은 상태까지 자주 도달
@@ -884,22 +914,28 @@ insertion과 같이 어려운 task는 일반적으로 **몇천 step으로 완료
 본 실험에서 발생한 OOM은 크게 두 가지 유형이었습니다.
 
 ## 18.1 장시간 train 중 OOM
+
 원인:
+
 - vision backbone + ACT + image input
 - 8GB GPU의 제한
 - `batch_size=2` 장시간 유지
 
 해결:
+
 - `batch_size=1`
 - `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`
 
 ## 18.2 train 중 자동 eval에서 OOM
+
 원인:
+
 - train은 batch 1로 버텨도
 - 중간 eval은 별도 env와 policy inference가 추가됨
 - eval batch가 기본적으로 커서 메모리 사용량 증가
 
 해결:
+
 - 학습 중 eval 사실상 비활성화
 - 학습과 eval을 분리
 
@@ -1035,14 +1071,17 @@ lerobot-eval \
 ```
 
 ## 20.4 human render가 필요할 때
+
 `human` render 모드 사용 시 `pygame`이 필요할 수 있습니다.
 
 설치:
+
 ```bash
 pip install pygame
 ```
 
 그 후:
+
 ```bash
 MUJOCO_GL=egl \
 lerobot-eval \
@@ -1058,7 +1097,7 @@ lerobot-eval \
 
 ### 보충: eval을 어떻게 설명할지
 
-- **참고**: **평가(eval)**는 “학습이 끝난(또는 중간) 정책을 시뮬레이션에 넣고, 정해진 횟수만큼 에피소드를 돌려서 성공률·보상 등을 재는 것”입니다. `lerobot-eval`에 checkpoint 경로(`--policy.path`)와 env, 에피소드 수를 주면 됩니다. `rgb_array`는 영상으로 저장할 때, `human`은 화면으로 보면서 확인할 때 씁니다.
+- **참고**: **평가(eval)** 는 “학습이 끝난(또는 중간) 정책을 시뮬레이션에 넣고, 정해진 횟수만큼 에피소드를 돌려서 성공률·보상 등을 재는 것”입니다. `lerobot-eval`에 checkpoint 경로(`--policy.path`)와 env, 에피소드 수를 주면 됩니다. `rgb_array`는 영상으로 저장할 때, `human`은 화면으로 보면서 확인할 때 씁니다.
 - **MODEL 경로**: 각 checkpoint의 **pretrained_model** 폴더를 가리키면 됩니다. 3k면 `.../003000/pretrained_model`, 60k면 `.../060000/pretrained_model`처럼 step에 맞는 폴더를 지정합니다.
 - **요약**: 같은 env와 에피소드 수로 3k·30k·60k를 평가하면 step에 따른 reward 변화를 비교할 수 있으며, 그래프나 표로 정리하여 참고할 수 있습니다.
 
@@ -1073,25 +1112,29 @@ lerobot-eval \
 - `pc_success`
 
 ## 21.1 `pc_success`
+
 최종 성공률입니다.
 
 예:
+
 - `0.0` → 성공 판정을 한 번도 못 받음
 - `0.2` → 10개 중 2개 성공
 
 ## 21.2 `avg_sum_reward`
+
 에피소드 전체에서 받은 reward 총합의 평균입니다.
 
 높을수록 policy가 reward 구조상 더 유리한 행동을 하고 있음을 의미합니다.
 
 ## 21.3 `avg_max_reward`
+
 각 episode에서 도달한 최대 reward의 평균입니다.
 
 이 값이 상승하는 것은 일반적으로 policy가 **더 깊은 성공 관련 상태**까지 도달하고 있음을 의미합니다.
 
 ### 보충: 지표를 쉽게 설명하기
 
-- **참고**: **reward(보상)**는 환경이 “지금 행동이 얼마나 좋았는지”를 숫자로 알려주는 값입니다. insertion에서는 peg가 hole에 가까워지거나, 특정 단계를 통과할 때마다 보상이 쌓입니다. **pc_success**는 “에피소드 끝에서 최종 성공으로 인정된 비율”입니다. 0이면 한 번도 완전 삽입에 성공하지 못한 것이고, 0.2면 10번 중 2번 성공한 것입니다.
+- **참고**: **reward(보상)** 는 환경이 “지금 행동이 얼마나 좋았는지”를 숫자로 알려주는 값입니다. insertion에서는 peg가 hole에 가까워지거나, 특정 단계를 통과할 때마다 보상이 쌓입니다. **pc_success**는 “에피소드 끝에서 최종 성공으로 인정된 비율”입니다. 0이면 한 번도 완전 삽입에 성공하지 못한 것이고, 0.2면 10번 중 2번 성공한 것입니다.
 - **avg_sum_reward vs avg_max_reward**: sum은 “에피소드 전체에서 받은 보상의 합”, max는 “그 에피소드에서 찍은 최대 보상”입니다. max가 오른다는 것은 “가장 잘한 순간이 나아졌다”는 뜻이라, 아직 success는 0이어도 “성공 직전까지는 자주 간다”는 해석에 쓸 수 있습니다.
 - **요약**: success가 0이어도 reward 추이가 오르면 정책이 올바른 방향으로 학습되고 있는 신호로 해석할 수 있으며, 완전 성공은 아직이어도 학습은 진행 중인 상태입니다.
 
@@ -1100,33 +1143,40 @@ lerobot-eval \
 # 22. 본 실험의 성능 추이
 
 ## 22.1 3k eval
+
 - `avg_sum_reward = 3.9`
 - `avg_max_reward = 0.1`
 - `pc_success = 0.0`
 
 해석:
+
 - 거의 초기 학습 단계
 
 ## 22.2 30k eval
+
 - `avg_sum_reward = 23.9`
 - `avg_max_reward = 0.4`
 - `pc_success = 0.0`
 
 해석:
+
 - task 구조를 이해하기 시작한 단계
 
 ## 22.3 60k eval
+
 - `avg_sum_reward = 160.3`
 - `avg_max_reward = 1.4`
 - `pc_success = 0.0`
 
 고득점 episode:
+
 - `379`
 - `442`
 - `421`
 - `330`
 
 해석:
+
 - 성공률은 아직 0이지만
 - policy가 상당히 깊은 상태까지 자주 들어감
 - 마지막 정밀 삽입/성공 판정 직전에서 실패할 가능성 높음
@@ -1264,6 +1314,7 @@ lerobot-train \
 # 25. 앞으로의 추천 실험
 
 ## 추천 1. high reward episode 영상 확인
+
 reward가 높았던 episode의 mp4를 우선 확인합니다.
 
 60k eval 기준 reward가 높은 episode가 있으므로,  
@@ -1275,9 +1326,11 @@ reward가 높았던 episode의 mp4를 우선 확인합니다.
 - 한쪽 팔/그리퍼 타이밍이 어긋나는가
 
 ## 추천 2. 100k까지 이어서 학습
+
 현재 reward 추세만 보면 계속 학습할 가치가 충분합니다.
 
 ## 추천 3. 100k 이후 다시 eval
+
 이때 다음 항목을 확인합니다.
 
 - `pc_success`가 0을 벗어나는가
@@ -1314,11 +1367,11 @@ reward가 높았던 episode의 mp4를 우선 확인합니다.
 
 ## A.1 저장소 구도
 
-| 대상 | 역할 | 원격 URL 예시 |
-|------|------|----------------|
-| **studyALOHA** (상위) | 내 실험 문서·설정·서브모듈 “버전” 관리 | `https://github.com/DownyBehind/studyALOHA.git` |
+| 대상                     | 역할                                       | 원격 URL 예시                                      |
+| ------------------------ | ------------------------------------------ | -------------------------------------------------- |
+| **studyALOHA** (상위)    | 내 실험 문서·설정·서브모듈 “버전” 관리     | `https://github.com/DownyBehind/studyALOHA.git`    |
 | **aloha_sim** (서브모듈) | 원본 코드만 참조, 업데이트는 원본에서 pull | `https://github.com/google-deepmind/aloha_sim.git` |
-| **lerobot** (서브모듈) | 위와 동일 | `https://github.com/huggingface/lerobot.git` |
+| **lerobot** (서브모듈)   | 위와 동일                                  | `https://github.com/huggingface/lerobot.git`       |
 
 상위 저장소에는 **README, .gitignore, .gitmodules**와 **서브모듈이 가리키는 커밋**만 커밋·푸시합니다. 서브모듈 폴더 내 실제 코드는 각 원본 저장소에서 관리됩니다.
 
@@ -1398,12 +1451,12 @@ git push origin master
 
 ## A.4 일상적인 Git 관리 요약
 
-| 하고 싶은 일 | 어디서 실행 | 대략적인 순서 |
-|-------------|-------------|----------------|
-| README·설정만 수정해서 GitHub에 반영 | studyALOHA 루트 | `git add` → `commit` → `push` |
-| 원본 aloha_sim 코드만 최신으로 맞추기 | `aloha_sim`에서 pull 후 studyALOHA 루트에서 | `cd aloha_sim` → `git pull origin main` → `cd ..` → `git add aloha_sim` → `commit` → `push` |
-| 원본 lerobot 코드만 최신으로 맞추기 | `lerobot`에서 pull 후 studyALOHA 루트에서 | 위와 동일하게 `lerobot` 기준으로 |
-| 다른 PC에서 프로젝트 받기 | 새 PC | `git clone --recurse-submodules <URL>` 또는 클론 후 `git submodule update --init --recursive` |
-| 서브모듈 안 로컬 변경(학습 결과 등) 확인 | `aloha_sim` 또는 `lerobot` 안에서 | `git status` (상위 저장소에는 서브모듈 “커밋”만 올리면 됨) |
+| 하고 싶은 일                             | 어디서 실행                                 | 대략적인 순서                                                                                 |
+| ---------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| README·설정만 수정해서 GitHub에 반영     | studyALOHA 루트                             | `git add` → `commit` → `push`                                                                 |
+| 원본 aloha_sim 코드만 최신으로 맞추기    | `aloha_sim`에서 pull 후 studyALOHA 루트에서 | `cd aloha_sim` → `git pull origin main` → `cd ..` → `git add aloha_sim` → `commit` → `push`   |
+| 원본 lerobot 코드만 최신으로 맞추기      | `lerobot`에서 pull 후 studyALOHA 루트에서   | 위와 동일하게 `lerobot` 기준으로                                                              |
+| 다른 PC에서 프로젝트 받기                | 새 PC                                       | `git clone --recurse-submodules <URL>` 또는 클론 후 `git submodule update --init --recursive` |
+| 서브모듈 안 로컬 변경(학습 결과 등) 확인 | `aloha_sim` 또는 `lerobot` 안에서           | `git status` (상위 저장소에는 서브모듈 “커밋”만 올리면 됨)                                    |
 
 서브모듈 폴더 안에서 수정한 파일은 **원본 저장소에 커밋하지 않는 한** 상위 저장소 `git status`에 “modified content”로만 보입니다. 학습 체크포인트·결과는 유지한 채 원본 코드만 반영하려면 A.3과 같이 pull 후 상위에서 `git add`·`commit`·`push`를 수행하면 됩니다.
