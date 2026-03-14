@@ -858,6 +858,59 @@ RTX 3070 Laptop 8GB 환경에서는:
 
 즉 이 환경에서는 **배치를 늘리기보다 학습을 오래 진행하고 checkpoint를 잘 관리하는 것**이 더 중요하였습니다.
 
+## 16.4 ACT에서 실제 gradient가 잡히는 방식 (1-step 지도학습과 비교)
+
+일반적인 1-step 지도학습은 보통 다음처럼 생각할 수 있습니다.
+
+- 입력 1개에서 행동 1개를 예측: $\hat{a}_t$
+- 정답 행동: $a_t$
+- loss 예시: $L_t = \|\hat{a}_t - a_t\|^2$
+
+이때 한 샘플의 gradient는
+
+- $\nabla_\theta L_t$
+
+처럼 **한 시점의 오차**에서 바로 나옵니다.
+
+ACT는 한 시점에서 행동 1개가 아니라, 길이 $K$의 action chunk를 한 번에 예측합니다.
+
+- 예측: $(\hat{a}_t, \hat{a}_{t+1}, \dots, \hat{a}_{t+K-1})$
+- 정답: $(a_t, a_{t+1}, \dots, a_{t+K-1})$
+
+샘플 1개에 대한 chunk loss를 단순화해서 쓰면:
+
+$$
+L_t^{\text{chunk}} = \frac{1}{K} \sum_{i=0}^{K-1} \|\hat{a}_{t+i} - a_{t+i}\|^2
+$$
+
+즉 gradient는
+
+$$
+\nabla_\theta L_t^{\text{chunk}} = \frac{1}{K} \sum_{i=0}^{K-1} \nabla_\theta \|\hat{a}_{t+i} - a_{t+i}\|^2
+$$
+
+처럼 **chunk 안 여러 미래 step의 오차가 합쳐진 형태**로 계산됩니다.
+
+batch size까지 포함하면, 실제 optimizer가 보는 loss는 다음처럼 됩니다.
+
+$$
+L_{\text{batch}} = \frac{1}{B} \sum_{b=1}^{B} L_{t_b}^{\text{chunk}}
+$$
+
+여기서:
+
+- $B$ = `batch_size`
+- $K$ = `chunk_size` (예: ACT 설정에서 100)
+
+즉 `batch_size=1`이어도, ACT에서는 내부적으로 chunk 길이 $K$만큼의 오차가 평균되어 gradient가 계산됩니다.
+
+### 직관 예시
+
+- 1-step 지도학습: “현재 프레임 1개 → 현재 action 1개” 오차로 update
+- ACT(chunk=100): “현재 프레임/상태 → 앞으로 100 step action 묶음” 오차로 update
+
+그래서 ACT의 1회 update는, 직관적으로 보면 “한 시점의 점(1-step) 오차”가 아니라 “짧은 행동 시퀀스(100-step) 오차”를 반영한 update에 가깝습니다.
+
 ### 보충: batch size를 쉽게
 
 - **참고**: “한 번의 학습 업데이트에 몇 개의 샘플(데모 프레임)을 함께 넣어서 gradient를 계산할지”가 batch size입니다. 2면 2개씩, 1이면 1개씩 사용합니다. 크면 학습이 안정적일 수 있지만 GPU 메모리를 많이 쓰므로, 8GB 같은 환경에서는 1 또는 2로 제한하는 경우가 많습니다.
